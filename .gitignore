@@ -1,5 +1,11 @@
 # Personal data (user fills these)
 cv.md
+# Any other CV snapshot/variant, wherever it lands (PII: name, email, phone) —
+# catches CV_Name.md, Name-CV.md, cv-backup.md, etc. regardless of casing.
+**/*[Cc][Vv]_*.md
+**/*_[Cc][Vv].md
+**/*[Cc][Vv]-*.md
+**/*-[Cc][Vv].md
 data/applications.md
 data/applications.db
 data/follow-ups.md
