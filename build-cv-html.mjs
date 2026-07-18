@@ -26,6 +26,22 @@ const TEMPLATE_PATH = resolve(__dirname, 'templates', 'cv-template.html');
 const PLACEHOLDER_RE = /\{\{[A-Z_]+\}\}/g;
 const CONTACT_ROW_RE = /<div class="contact-row">[\s\S]*?<\/div>/;
 
+// Sections that legitimately have no content for some candidates (most people
+// have zero certifications; a tailored CV may drop Projects or Competencies).
+// Each is wrapped in the template by <!-- SECTION:NAME:START/END --> markers so
+// the whole block (title included) can be removed rather than leaving a section
+// header sitting over empty content.
+const OPTIONAL_SECTIONS = ['COMPETENCIES', 'PROJECTS', 'CERTIFICATIONS'];
+
+function stripEmptyOptionalSections(html, substitutions) {
+  for (const name of OPTIONAL_SECTIONS) {
+    if (substitutions[name]) continue; // has content, keep the section
+    const re = new RegExp(`[ \\t]*<!-- SECTION:${name}:START -->[\\s\\S]*?<!-- SECTION:${name}:END -->\\n?`);
+    html = html.replace(re, '');
+  }
+  return html;
+}
+
 const PAGE_WIDTHS = { letter: '8.5in', a4: '210mm' };
 
 const DEFAULT_SECTION_TITLES = {
@@ -249,14 +265,7 @@ function renderHtml(template, payload) {
   // no <img>), so they are rebuilt as whole blocks before placeholder fill.
   let html = template.replace(CONTACT_ROW_RE, () => buildContactRow(candidate));
   html = html.replace(/\{\{PHOTO\}\}/g, () => buildPhoto(candidate, candidate.name));
-
-  // Projects is the one CV section that's genuinely optional (education,
-  // experience, and skills are effectively always present) — drop the whole
-  // <!-- PROJECTS --> block when there are no entries, instead of leaving a
-  // bare "Projects" header with nothing under it.
-  if (!Array.isArray(payload.projects) || payload.projects.length === 0) {
-    html = html.replace(/<!-- PROJECTS -->[\s\S]*?(?=<!-- EDUCATION -->)/, '');
-  }
+  html = stripEmptyOptionalSections(html, substitutions);
 
   for (const [key, value] of Object.entries(substitutions)) {
     html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), () => value);
